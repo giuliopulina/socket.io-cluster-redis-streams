@@ -1,0 +1,112 @@
+version: '3.9'
+
+services:
+  haproxy:
+    image: haproxy:1.7-alpine
+    volumes:
+      - ./haproxy/haproxy.cfg:/usr/local/etc/haproxy/haproxy.cfg:ro
+    links:
+      - server-john
+      - server-paul
+      - server-george
+      - server-ringo
+    ports:
+     - "3000:80"
+    networks:
+      - node-webapp-network
+  server-john:
+    build: ./server
+    links:
+      - mongo1
+      - mongo2
+      - mongo3
+      - mongosetup
+    expose:
+      - "3000"
+    environment:
+      - NAME=John
+    networks:
+      - node-webapp-network
+  server-paul:
+    build: ./server
+    links:
+      - mongo1
+      - mongo2
+      - mongo3
+      - mongosetup
+    expose:
+      - "3000"
+    environment:
+      - NAME=Paul
+    networks:
+      - node-webapp-network
+  server-george:
+    build: ./server
+    links:
+      - mongo1
+      - mongo2
+      - mongo3
+      - mongosetup
+    expose:
+      - "3000"
+    environment:
+      - NAME=George
+    networks:
+      - node-webapp-network
+  server-ringo:
+    build: ./server
+    links:
+      - mongo1
+      - mongo2
+      - mongo3
+      - mongosetup
+    expose:
+      - "3000"
+    environment:
+      - NAME=Ringo
+    networks:
+      - node-webapp-network
+
+  mongo1:
+    image: mongo:6
+    hostname: mongo1
+    container_name: mongo1
+    expose:
+      - 27017
+    entrypoint: ["mongod", "--replSet", "myReplicaSet", "--bind_ip", "localhost,mongo1", "--port", "27017" ]
+    networks:
+      - node-webapp-network
+  mongo2:
+    image: mongo:6
+    hostname: mongo2
+    container_name: mongo2
+    expose:
+      - 27018
+    entrypoint: ["mongod", "--replSet", "myReplicaSet", "--bind_ip", "localhost,mongo2", "--port", "27018"]
+    networks:
+      - node-webapp-network
+  mongo3:
+    image: mongo:6
+    hostname: mongo3
+    container_name: mongo3
+    expose:
+      - 27019
+    entrypoint: ["mongod", "--replSet", "myReplicaSet", "--bind_ip", "localhost,mongo3" ,"--port", "27019"]
+    networks:
+      - node-webapp-network
+  mongosetup:
+    image: mongo:6
+    depends_on:
+      - mongo1
+      - mongo2
+      - mongo3
+    volumes:
+      - ./mongo/mongo-setup.sh:/usr/local/etc/mongo/mongo-setup.sh
+    restart: "no"
+    command: [ "bash", "/usr/local/etc/mongo/mongo-setup.sh"]
+    networks:
+      - node-webapp-network
+
+networks:
+  node-webapp-network:
+    driver: bridge
