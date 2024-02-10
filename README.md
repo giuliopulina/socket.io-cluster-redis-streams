@@ -3,7 +3,7 @@
 In this repository, I'm performing some experiments with the Socket.io library. 
 The primary objective is to deepen my understanding of the library's functionalities, particularly its possibilities in terms of for scalability, resilience, and fault tolerance.
 
-List of experiments:
+List of experiments (one per folder):
 
 - redis-single-node: A chat application (derived from Socket.io [example](https://github.com/socketio/socket.io/tree/main/examples/chat) deployed within a cluster of Socket.io servers, that communicate via a singular Redis instance using Redis adapter. 
 Load balancing and session persistence are attained through the utilization of Nginx in front of the Node.js servers.example.
@@ -30,4 +30,4 @@ In the future, a goal is to enhance the application's functionality to facilitat
 To run the project:
 
 - cd <project_folder>
-- docker compose up
+- docker-compose up
