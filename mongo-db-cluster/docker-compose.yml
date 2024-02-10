@@ -1,5 +1,29 @@
 version: '3.9'
 
+x-socketio-base: &default-socket-io
+    build: ./server
+    expose:
+      - "3000"
+    links:
+      - mongo1
+      - mongo2
+      - mongo3
+      - mongosetup
+      - pg-0
+      - pg-1
+    env_file:
+      - path: ./server/node-variables.env
+        required: true 
+    networks:
+      - node-webapp-network
+
+x-mongo-base: &default-mongo
+    image: mongo:6
+    expose:
+      - 27017
+    networks:
+      - node-webapp-network
+
 services:
   haproxy:
     image: haproxy:1.7-alpine
@@ -14,86 +38,45 @@ services:
      - "3000:80"
     networks:
       - node-webapp-network
-  server-john:
-    build: ./server
-    links:
-      - mongo1
-      - mongo2
-      - mongo3
-      - mongosetup
-    expose:
-      - "3000"
-    environment:
+  
+  server-john: 
+    <<: *default-socket-io
+    environment: 
       - NAME=John
-    networks:
-      - node-webapp-network
+      
   server-paul:
-    build: ./server
-    links:
-      - mongo1
-      - mongo2
-      - mongo3
-      - mongosetup
-    expose:
-      - "3000"
-    environment:
+    <<: *default-socket-io
+    environment: 
       - NAME=Paul
-    networks:
-      - node-webapp-network
-  server-george:
-    build: ./server
-    links:
-      - mongo1
-      - mongo2
-      - mongo3
-      - mongosetup
-    expose:
-      - "3000"
+  
+  server-george: 
+    <<: *default-socket-io
     environment:
       - NAME=George
-    networks:
-      - node-webapp-network
-  server-ringo:
-    build: ./server
-    links:
-      - mongo1
-      - mongo2
-      - mongo3
-      - mongosetup
-    expose:
-      - "3000"
+     
+  server-ringo: 
+    <<: *default-socket-io
     environment:
       - NAME=Ringo
-    networks:
-      - node-webapp-network
-
+  
   mongo1:
-    image: mongo:6
+    <<: *default-mongo
     hostname: mongo1
     container_name: mongo1
-    expose:
-      - 27017
     entrypoint: ["mongod", "--replSet", "myReplicaSet", "--bind_ip", "localhost,mongo1", "--port", "27017" ]
-    networks:
-      - node-webapp-network
+
   mongo2:
-    image: mongo:6
+    <<: *default-mongo
     hostname: mongo2
     container_name: mongo2
-    expose:
-      - 27018
-    entrypoint: ["mongod", "--replSet", "myReplicaSet", "--bind_ip", "localhost,mongo2", "--port", "27018"]
-    networks:
-      - node-webapp-network
+    entrypoint: ["mongod", "--replSet", "myReplicaSet", "--bind_ip", "localhost,mongo2", "--port", "27017"]
+    
   mongo3:
-    image: mongo:6
+    <<: *default-mongo
     hostname: mongo3
     container_name: mongo3
-    expose:
-      - 27019
-    entrypoint: ["mongod", "--replSet", "myReplicaSet", "--bind_ip", "localhost,mongo3" ,"--port", "27019"]
-    networks:
-      - node-webapp-network
+    entrypoint: ["mongod", "--replSet", "myReplicaSet", "--bind_ip", "localhost,mongo3" ,"--port", "27017"]
+    
   mongosetup:
     image: mongo:6
     depends_on:
@@ -106,7 +89,55 @@ services:
     command: [ "bash", "/usr/local/etc/mongo/mongo-setup.sh"]
     networks:
       - node-webapp-network
+      
+  pg-0:
+    image: docker.io/bitnami/postgresql-repmgr:16
+    expose:
+      - 5432
+    volumes:
+      - pg_0_data:/bitnami/postgresql
+      - ./postgres/init.sql:/docker-entrypoint-initdb.d/init.sql
+    environment:
+      - POSTGRESQL_POSTGRES_PASSWORD=adminpassword
+      - POSTGRESQL_USERNAME=socketio
+      - POSTGRESQL_PASSWORD=socket
+      - POSTGRESQL_DATABASE=socketiostorage
+      - REPMGR_PASSWORD=repmgrpassword
+      - REPMGR_PRIMARY_HOST=pg-0
+      - REPMGR_PRIMARY_PORT=5432
+      - REPMGR_PARTNER_NODES=pg-0,pg-1:5432
+      - REPMGR_NODE_NAME=pg-0
+      - REPMGR_NODE_NETWORK_NAME=pg-0
+      - REPMGR_PORT_NUMBER=5432
+    networks:
+      - node-webapp-network
+  pg-1:
+    image: docker.io/bitnami/postgresql-repmgr:16
+    expose:
+      - 5432
+    volumes:
+      - pg_1_data:/bitnami/postgresql
+    environment:
+      - POSTGRESQL_POSTGRES_PASSWORD=adminpassword
+      - POSTGRESQL_USERNAME=socketio
+      - POSTGRESQL_PASSWORD=socket
+      - POSTGRESQL_DATABASE=socketiostorage
+      - REPMGR_PASSWORD=repmgrpassword
+      - REPMGR_PRIMARY_HOST=pg-0
+      - REPMGR_PRIMARY_PORT=5432
+      - REPMGR_PARTNER_NODES=pg-0,pg-1:5432
+      - REPMGR_NODE_NAME=pg-1
+      - REPMGR_NODE_NETWORK_NAME=pg-1
+      - REPMGR_PORT_NUMBER=5432
+    networks:
+      - node-webapp-network
 
 networks:
   node-webapp-network:
     driver: bridge
+
+volumes:
+  pg_0_data:
+    driver: local
+  pg_1_data:
+    driver: local

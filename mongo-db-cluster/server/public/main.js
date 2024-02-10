@@ -3,7 +3,10 @@ $(function() {
   const socket = io({
 	transports: ["websocket"],  
     reconnectionDelay: 1000, 
-    reconnectionDelayMax: 5000 
+    reconnectionDelayMax: 5000,
+    auth: {
+      serverOffset: 0
+    }	
   });
 
   $("#sendMessage").on( "submit", function( event ) {
@@ -17,8 +20,9 @@ $(function() {
     $( "#sendMessage" ).trigger( "submit" );
   } );
   
-  socket.on("message", (data) => {
+  socket.on("message", (data, serverOffset) => {
 	console.log('Received ' + data.message);
+	socket.auth.serverOffset = serverOffset;
   });
   
   socket.on("connect", () => {
@@ -43,23 +47,23 @@ $(function() {
   socket.on('disconnect', (reason) => {
     
 	if (reason === "io server disconnect") {
-		console.log('socket + ' + socket.id + ' has been disconnected by the server. Trying to reconnect in 15 seconds');
+		console.log('Socket ' + socket.id + ' has been disconnected by the server. Trying to reconnect in 15 seconds');
 		
 		// reconnecting manually
 		setInterval(() => {
           socket.connect();
         }, 15000);
 	} else {
-		console.log('socket + ' + socket.id + ' has been disconnected by the server. Reason = ' + reason);
+		console.log('Socket ' + socket.id + ' has been disconnected by the server. Reason = ' + reason);
 	}
   });
 
   socket.on('reconnect', function () {
-    console.log('socket' + socket.id + ',you have been reconnected');
+    console.log('Socket' + socket.id + ' has been reconnected');
   });
 
   socket.on('reconnect_error', (reason) => {
-    console.log('attempt to reconnect socket ' + socket.id + 'has failed because of ' + reason);
+    console.log('Attempt to reconnect socket ' + socket.id + 'has failed because of ' + reason);
   });
 
 });

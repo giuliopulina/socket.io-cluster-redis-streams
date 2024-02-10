@@ -13,12 +13,12 @@ mongosh --host mongo1:27017 <<EOF
       },
       {
         "_id": 1,
-        "host": "mongo2:27018",
+        "host": "mongo2:27017",
         "priority": 0
       },
       {
         "_id": 2,
-        "host": "mongo3:27019",
+        "host": "mongo3:27017",
         "priority": 0
       }
     ]
