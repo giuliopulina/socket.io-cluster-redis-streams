@@ -175,7 +175,4 @@ io.on('connection', async (socket) => {
 	console.log(socket.id + ' disconnected');
   });
   
-  socket.on('reconnect', () => {
-	console.log(socket.id + ' reconnected');
-  });
 });
