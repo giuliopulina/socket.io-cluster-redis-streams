@@ -1,4 +1,4 @@
-# socket.io-experiments
+# Socket.io-experiments
 
 In this repository, I'm performing some experiments with the Socket.io library. 
 The primary objective is to deepen my understanding of the library's functionalities, particularly its possibilities in terms of for scalability, resilience, and fault tolerance.
