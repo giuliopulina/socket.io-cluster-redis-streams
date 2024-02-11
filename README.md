@@ -1,4 +1,4 @@
-# Repository content description
+# Repository description
 
 In this repository, I'm performing some experiments with the Socket.io library.\
 The primary objective is to deepen my understanding of the library's functionalities, particularly its possibilities in terms of for scalability, resilience, and fault tolerance.
@@ -6,7 +6,7 @@ The primary objective is to deepen my understanding of the library's functionali
 List of experiments (one per folder):
 
 1. *redis-single-node*\
-A chat application (derived from Socket.io [example](https://github.com/socketio/socket.io/tree/main/examples/chat) deployed within a cluster of Socket.io servers, that communicate via a singular Redis instance using Redis adapter. 
+A chat application (derived from Socket.io [example](https://github.com/socketio/socket.io/tree/main/examples/chat) deployed within a cluster of Socket.io servers, that communicate via a singular Redis instance using Redis Streams adapter. 
 Load balancing and session persistence are attained through the utilization of Nginx in front of the Node.js servers.example.\
 **Known issues**: 
     - All the requests are routed to the same Socket.io server, probably because of the way 'hash' load balancing mode of Nginx works in a local environment. For this reason, I couldn't realize that the chat application was buggy and not compatible with a cluster setup.
