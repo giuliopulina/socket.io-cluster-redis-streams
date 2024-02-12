@@ -77,8 +77,7 @@ const connectToMongoWithRetry = async () => {
     while (!connected) {
         try {
             mongoClient = await MongoClient.connect(
-				process.env.MONGODB_CONNECTION_URL,
-				{ useNewUrlParser: true }
+				process.env.MONGODB_CONNECTION_URL
 			);
             connected = true;
         } catch (error) {
@@ -129,25 +128,7 @@ app.head('/health', function (req, res) {
   res.sendStatus(200);
 });
 
-io.on('connection', async (socket) => {
-	
-  console.log(socket.id + ' connected. Recovered? ' + socket.recovered);
-  
-  socket.on('message', async(data) => {
-	console.log('Received message ' + data.message + ' from socket.id ' + socket.id + ', broadcasting to all connected sockets' );
-	
-	let result;
-    try {
-      // store the message in the database
-      result = await executePgWriteQuery('INSERT INTO messages (content) VALUES ($1) RETURNING id', [data.message]);
-    } catch (e) {
-      console.log('Caught error inserting msg in pg', e);
-      return;
-    }
-	
-    socket.broadcast.emit('message', data, result.rows[0].id);
-  });
-  
+async function syncClientState(socket) {
   if (!socket.recovered) {
 	console.log(socket.id + ' reconnected without connection state recovery. Trying to sync client state');
 
@@ -158,7 +139,8 @@ io.on('connection', async (socket) => {
 		if (result && result.rows && result.rows.length > 0) {
 			console.log('Synchronizing ' + socket.id + ' state upon reconnection. Found ' + result.rows.length + ' missing messages');
 			for (const row of result.rows) {
-				await socket.emit('message', {message: row.content}, row.id); 
+				const message = JSON.parse(row.content);
+				socket.emit('message', message, row.id); 
 			}
 		} else {
 			console.log('No needed to synchronize state of ' + socket.id);
@@ -169,6 +151,47 @@ io.on('connection', async (socket) => {
   } else {
 	  console.log('socket ' + socket.id + 'recovered using connection state recovery');
   }
+}
+
+io.on('connection', async (socket) => {
+	
+  console.log(socket.id + ' connected. Recovered? ' + socket.recovered);
+  
+  socket.emit('server_name', serverName);
+  
+  if (socket.username) {
+	  await syncClientState(socket);
+  }
+  
+  socket.on('new_user', async(username) => {
+	// we store the username in the socket session for this client
+	socket.username = username;
+	await syncClientState(socket);
+  });
+  
+  socket.on('message', async(data) => {
+	  
+	console.log('Received message ' + JSON.stringify(data) + ' from socket.id ' + socket.id + ', broadcasting to all connected sockets' );
+	
+    if (data.message === 'empty_database') {
+		await executePgWriteQuery('DELETE from messages', []);
+		return;
+	}
+	
+	let result;
+    try {
+      const message = data;
+	  const stringifiedMessage = JSON.stringify(message);
+
+      result = await executePgWriteQuery('INSERT INTO messages (content) VALUES ($1) RETURNING id', [stringifiedMessage]);
+	  socket.broadcast.emit('message', message, result.rows[0].id);
+    } catch (e) {
+      console.log('Caught error inserting msg in pg', e);
+      return;
+    }
+  });
+   
+   
 
   // when the user disconnects.. perform this
   socket.on('disconnect', () => {

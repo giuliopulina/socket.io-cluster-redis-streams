@@ -2,20 +2,37 @@
 <html lang="en">
 <head>
   <meta charset="UTF-8">
-  <title>Socket.IO Mongo Cluster Example</title>
+  <title>Socket.IO Mongo - Postgres - Example</title>
   <link rel="stylesheet" href="style.css">
   <script src="https://code.jquery.com/jquery-1.10.2.min.js"></script>
   <script src="/socket.io/socket.io.js"></script>
   <script src="/main.js"></script>
 </head>
 <body>
-
-  <form id="sendMessage">
-    <label for="message">Message</label>
-    <input type="text" name="message" id="message"/>
-	<input type="checkbox" name="automaticDisconnection" id="automaticDisconnection"/>
-	<input type="button" id="sendMessageSubmit"> Submit </input>
-  </form>
-
+ 
+  <ul class="pages">
+    <li class="chat page">
+	  <!--<div id="info" style="padding-top:5px padding-bottom:5px; border: 1px solid black">
+	      <p id="serverName"/>
+		  <p>Send message "disconnect" to simulate temporary disconnection of the client (connection state recovery)</p>
+	   </div>-->
+      <div class="chatArea">
+        <ul class="messages"></ul>
+      </div>
+	  <form id="sendMessageForm">
+        <input id="inputMessage" placeholder="Type here..."/>
+		<input style="display:none" type="button" id="sendMessageFormSubmit" value="Send"> </input>
+	  </form>
+    </li>
+    <li class="login page">
+      <div class="form">
+        <h3 class="title">What's your nickname?</h3>
+		<form id="setUsernameForm">
+			<input id="usernameInput" type="text" maxlength="14" />
+			<input style="display:none" type="button" id="setUsernameFormSubmit" value="Send"> </input>
+		</form>
+      </div>
+    </li>
+  </ul>
 </body>
 </html>
