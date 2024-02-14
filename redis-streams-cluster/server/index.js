@@ -1,6 +1,4 @@
 const express = require('express');
-const app = express();
-const httpServer = require("http").createServer(app);
 
 const { Server } = require("socket.io");
 const { createAdapter } = require('@socket.io/redis-streams-adapter');
@@ -9,28 +7,87 @@ const { createCluster } = require('redis');
 const port = process.env.PORT || 3000;
 const serverName = process.env.NAME || 'Unknown';
 
-const server = httpServer.listen(port);
-const cluster = createCluster({
-    rootNodes: [
-        {
-            url: 'redis://173.18.0.8:6379'
-        },
-		{
-            url: 'redis://173.18.0.9:6379'
+async function initRedisClient() {
+	
+	console.log(process.env);
+	
+	let connected = false;
+    while (!connected) {
+        try {
+	
+			const redisClient = createCluster({
+			  rootNodes: [
+				{
+				  url: "redis://host.docker.internal:7000",
+				},
+				{
+				  url: "redis://host.docker.internal:7001",
+				},
+				{
+				  url: "redis://host.docker.internal:7002",
+				},
+				{
+				  url: "redis://host.docker.internal:7003",
+				},
+				{
+				  url: "redis://host.docker.internal:7004",
+				},
+				{
+				  url: "redis://host.docker.internal:7005",
+				},
+			  ],
+			  nodeAddressMap: {
+				'127.0.0.1:7000': {
+				  host: 'host.docker.internal',
+				  port: 7000
+				},
+				'127.0.0.1:7001': {
+				  host: 'host.docker.internal',
+				  port: 7001
+				},
+				'127.0.0.1:7002': {
+				  host: 'host.docker.internal',
+				  port: 7002
+				},
+				'127.0.0.1:7003': {
+				  host: 'host.docker.internal',
+				  port: 7003
+				},
+				'127.0.0.1:7004': {
+				  host: 'host.docker.internal',
+				  port: 7004
+				},
+				'127.0.0.1:7005': {
+				  host: 'host.docker.internal',
+				  port: 7005
+				}
+			  }
+			});
+			
+			console.log("Before connecting to Redis cluster");
+			await redisClient.connect();
+			redisClient.on('error', (err) => console.log('Redis Cluster Error', err));
+			console.log("After connecting to Redis cluster");
+			connected = true;
+			return redisClient;
+		}
+		catch (error) {
+            console.error('Failed to connect to Redis', error.message);
+            console.log('Retrying in 20 seconds...');
+            await new Promise(resolve => setTimeout(resolve, 20000)); // Wait for 20 seconds before retrying
         }
-    ]
-});
-
-console.log("Before connecting to Redis cluster");
-
-cluster.on('error', (err) => console.log('Redis Cluster Error', err));
+	}
+}
 
 (async () => {
-   await cluster.connect();
-   console.log('Connected to Redis cluster');
+   const redisClient = await initRedisClient();
+
    console.log('Before creating io');
+   const app = express();
+   const httpServer = require("http").createServer(app);
+   const server = httpServer.listen(port);
    const io = new Server(server, {
-	  adapter: createAdapter(cluster),
+	  adapter: createAdapter(redisClient),
 	  connectionStateRecovery: {
 		// the backup duration of the sessions and the packets
 		maxDisconnectionDuration: 2 * 60 * 1000,
